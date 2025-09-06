@@ -1,0 +1,77 @@
+package com.example.payagg.infra
+
+import com.example.payagg.adapters.providers.PaymentProviderRegistry
+import com.example.payagg.ports.ConfigPort
+import org.springframework.boot.actuator.health.Health
+import org.springframework.boot.actuator.health.HealthIndicator
+import org.springframework.stereotype.Component
+
+@Component("paymentProviders")
+class PaymentProvidersHealthIndicator(
+    private val providerRegistry: PaymentProviderRegistry
+) : HealthIndicator {
+    
+    override fun health(): Health {
+        val providers = providerRegistry.getAllProviders()
+        val healthyProviders = mutableListOf<String>()
+        val unhealthyProviders = mutableListOf<String>()
+        
+        providers.forEach { provider ->
+            try {
+                val health = provider.health()
+                if (health.healthy) {
+                    healthyProviders.add(provider.name)
+                } else {
+                    unhealthyProviders.add(provider.name)
+                }
+            } catch (e: Exception) {
+                unhealthyProviders.add(provider.name)
+            }
+        }
+        
+        val isHealthy = unhealthyProviders.isEmpty()
+        
+        return if (isHealthy) {
+            Health.up()
+                .withDetail("healthy_providers", healthyProviders)
+                .withDetail("total_providers", providers.size)
+                .build()
+        } else {
+            Health.down()
+                .withDetail("healthy_providers", healthyProviders)
+                .withDetail("unhealthy_providers", unhealthyProviders)
+                .withDetail("total_providers", providers.size)
+                .build()
+        }
+    }
+}
+
+@Component("configuration")
+class ConfigurationHealthIndicator(
+    private val configPort: ConfigPort
+) : HealthIndicator {
+    
+    override fun health(): Health {
+        return try {
+            val configs = configPort.getAllConfigs()
+            val requiredConfigs = listOf("providers", "routing_strategies", "fx_rates")
+            val missingConfigs = requiredConfigs.filter { !configs.containsKey(it) }
+            
+            if (missingConfigs.isEmpty()) {
+                Health.up()
+                    .withDetail("config_count", configs.size)
+                    .withDetail("required_configs", "all present")
+                    .build()
+            } else {
+                Health.down()
+                    .withDetail("config_count", configs.size)
+                    .withDetail("missing_configs", missingConfigs)
+                    .build()
+            }
+        } catch (e: Exception) {
+            Health.down()
+                .withDetail("error", e.message)
+                .build()
+        }
+    }
+}

@@ -1,0 +1,31 @@
+providers:
+  - name: StripeMock
+    currencies: [USD, EUR]
+    countries: [US, GB, DE]
+    networks: [VISA, MASTERCARD]
+    baseFeeBps: 300
+  - name: AdyenMock
+    currencies: [USD, EUR, GBP]
+    countries: [US, NL, GB, DE]
+    networks: [VISA, MASTERCARD, AMEX]
+    baseFeeBps: 290
+  - name: LocalBankMock
+    currencies: [USD]
+    countries: [US]
+    networks: [VISA, MASTERCARD]
+    baseFeeBps: 220
+
+routing:
+  rules:
+    - if: { country: US, network: AMEX }
+      action: { prefer: [AdyenMock], mode: PREFERRED }
+    - if: { binRange: "411111-411119" }
+      action: { prefer: [LocalBankMock], mode: STRICT }
+  strategies: { cost: true, weight: true, health: true }
+  weights: { StripeMock: 60, AdyenMock: 30, LocalBankMock: 10 }
+
+fx:
+  rates:
+    - { from: USD, to: EUR, rate: 0.90 }
+    - { from: EUR, to: USD, rate: 1.11 }
+    - { from: USD, to: GBP, rate: 0.78 }

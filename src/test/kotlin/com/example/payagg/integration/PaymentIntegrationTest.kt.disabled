@@ -1,0 +1,195 @@
+package com.example.payagg.integration
+
+import com.example.payagg.PaymentAggregatorApplication
+import com.example.payagg.api.dto.CreatePaymentRequest
+import com.example.payagg.api.dto.ConfirmPaymentRequest
+import com.example.payagg.api.dto.PaymentMethodDto
+import com.example.payagg.api.dto.CardDetailsDto
+import com.example.payagg.domain.*
+import com.example.payagg.ports.MerchantRepository
+import com.example.payagg.ports.CustomerRepository
+import com.fasterxml.jackson.databind.ObjectMapper
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.http.MediaType
+import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
+import org.springframework.transaction.annotation.Transactional
+import java.math.BigDecimal
+import java.util.*
+
+@SpringBootTest(classes = [PaymentAggregatorApplication::class])
+@AutoConfigureWebMvc
+@ActiveProfiles("test")
+@Transactional
+class PaymentIntegrationTest {
+    
+    @Autowired
+    private lateinit var mockMvc: MockMvc
+
+    @Autowired
+    private lateinit var objectMapper: ObjectMapper
+
+    @Autowired
+    private lateinit var merchantRepository: MerchantRepository
+
+    @Autowired
+    private lateinit var customerRepository: CustomerRepository
+
+    private lateinit var testMerchant: Merchant
+    private lateinit var testCustomer: Customer
+
+    @BeforeEach
+    fun setUp() {
+        // Create test merchant
+        testMerchant = Merchant(
+            businessName = "Test Merchant",
+            country = "US"
+        )
+        testMerchant = merchantRepository.save(testMerchant)
+
+        // Create test customer
+        testCustomer = Customer(
+            requestId = null,
+            email = "test@example.com",
+            name = "John Doe",
+            country = "US"
+        )
+        testCustomer = customerRepository.save(testCustomer)
+    }
+    
+    @Test
+    fun `should create and confirm payment successfully`() {
+        // Given - Use test data created in setUp
+        val merchantId = testMerchant.id
+        val customerId = testCustomer.id
+        
+        val createPaymentRequest = CreatePaymentRequest(
+            requestId = UUID.randomUUID(),
+            amount = BigDecimal("100.00"),
+            currency = "USD",
+            merchantId = merchantId,
+            customerId = customerId
+        )
+        
+        // When - Create payment
+        val createResult = mockMvc.perform(
+            post("/payments")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(createPaymentRequest))
+        )
+            .andExpect(status().isCreated)
+            .andExpect(jsonPath("$.amount").value(100.00))
+            .andExpect(jsonPath("$.currency").value("USD"))
+            .andExpect(jsonPath("$.status").value("INIT"))
+            .andExpect(jsonPath("$.merchant_id").value(merchantId.toString()))
+            .andReturn()
+        
+        val createResponse = objectMapper.readTree(createResult.response.contentAsString)
+        val paymentId = createResponse.get("id").asText()
+        
+        // Then - Confirm payment
+        val confirmPaymentRequest = ConfirmPaymentRequest(
+            paymentMethod = PaymentMethodDto(
+                type = "card",
+                card = CardDetailsDto(
+                    number = "4111111111111111",
+                    expiryMonth = 12,
+                    expiryYear = 2025,
+                    cvv = "123",
+                    holderName = "John Doe"
+                )
+            )
+        )
+        
+        mockMvc.perform(
+            post("/payments/$paymentId/confirm")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(confirmPaymentRequest))
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.payment_id").value(paymentId))
+            .andExpect(jsonPath("$.status").value("RECEIVED"))
+            .andExpect(jsonPath("$.routing_mode").value("SMART"))
+            .andExpect(jsonPath("$.route_decision").exists())
+    }
+    
+    @Test
+    fun `should get payment by id`() {
+        // Given - Use seeded merchant
+        val merchantId = UUID.fromString("550e8400-e29b-41d4-a716-446655440001")
+        
+        val createPaymentRequest = CreatePaymentRequest(
+            requestId = UUID.randomUUID(),
+            amount = BigDecimal("50.00"),
+            currency = "USD",
+            merchantId = merchantId,
+            customerId = null
+        )
+        
+        // Create payment first
+        val createResult = mockMvc.perform(
+            post("/payments")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(createPaymentRequest))
+        )
+            .andExpect(status().isCreated)
+            .andReturn()
+        
+        val createResponse = objectMapper.readTree(createResult.response.contentAsString)
+        val paymentId = createResponse.get("id").asText()
+        
+        // When - Get payment
+        mockMvc.perform(get("/payments/$paymentId"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.id").value(paymentId))
+            .andExpect(jsonPath("$.amount").value(50.00))
+            .andExpect(jsonPath("$.currency").value("USD"))
+            .andExpect(jsonPath("$.status").value("INIT"))
+    }
+    
+    @Test
+    fun `should cancel payment`() {
+        // Given - Use seeded merchant
+        val merchantId = UUID.fromString("550e8400-e29b-41d4-a716-446655440001")
+        
+        val createPaymentRequest = CreatePaymentRequest(
+            requestId = UUID.randomUUID(),
+            amount = BigDecimal("75.00"),
+            currency = "USD",
+            merchantId = merchantId,
+            customerId = null
+        )
+        
+        // Create payment first
+        val createResult = mockMvc.perform(
+            post("/payments")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(createPaymentRequest))
+        )
+            .andExpect(status().isCreated)
+            .andReturn()
+        
+        val createResponse = objectMapper.readTree(createResult.response.contentAsString)
+        val paymentId = createResponse.get("id").asText()
+        
+        // When - Cancel payment
+        mockMvc.perform(post("/payments/$paymentId/cancel"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.id").value(paymentId))
+            .andExpect(jsonPath("$.status").value("CANCELLED"))
+    }
+    
+    @Test
+    fun `should return 404 for non-existent payment`() {
+        val nonExistentId = UUID.randomUUID()
+        
+        mockMvc.perform(get("/payments/$nonExistentId"))
+            .andExpect(status().isNotFound)
+    }
+}

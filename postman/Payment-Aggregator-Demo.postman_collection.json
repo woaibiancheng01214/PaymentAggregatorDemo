@@ -1,0 +1,331 @@
+{
+  "info": {
+    "name": "Payment Aggregator Demo",
+    "description": "Comprehensive API collection for testing the Payment Aggregator Demo application",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "merchantId",
+      "value": "550e8400-e29b-41d4-a716-446655440001",
+      "type": "string"
+    },
+    {
+      "key": "customerId",
+      "value": "650e8400-e29b-41d4-a716-446655440001",
+      "type": "string"
+    },
+    {
+      "key": "paymentId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/actuator/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["actuator", "health"]
+        }
+      }
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Create Payment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('paymentId', response.id);",
+                  "    pm.test('Payment created successfully', function () {",
+                  "        pm.expect(response.status).to.eql('INIT');",
+                  "        pm.expect(response.amount).to.eql(100);",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"request_id\": \"{{$randomUUID}}\",\n  \"amount\": 100.00,\n  \"currency\": \"USD\",\n  \"merchant_id\": \"{{merchantId}}\",\n  \"customer_id\": \"{{customerId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payments",
+              "host": ["{{baseUrl}}"],
+              "path": ["payments"]
+            }
+          }
+        },
+        {
+          "name": "Get Payment",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/payments/{{paymentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["payments", "{{paymentId}}"]
+            }
+          }
+        },
+        {
+          "name": "Confirm Payment - VISA",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payment_method\": {\n    \"type\": \"card\",\n    \"card\": {\n      \"number\": \"4111111111111111\",\n      \"expiry_month\": 12,\n      \"expiry_year\": 2025,\n      \"cvv\": \"123\",\n      \"holder_name\": \"John Doe\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payments/{{paymentId}}/confirm",
+              "host": ["{{baseUrl}}"],
+              "path": ["payments", "{{paymentId}}", "confirm"]
+            }
+          }
+        },
+        {
+          "name": "Confirm Payment - AMEX (Adyen Preferred)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payment_method\": {\n    \"type\": \"card\",\n    \"card\": {\n      \"number\": \"378282246310005\",\n      \"expiry_month\": 12,\n      \"expiry_year\": 2025,\n      \"cvv\": \"1234\",\n      \"holder_name\": \"Jane Smith\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payments/{{paymentId}}/confirm",
+              "host": ["{{baseUrl}}"],
+              "path": ["payments", "{{paymentId}}", "confirm"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Payment",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/payments/{{paymentId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["payments", "{{paymentId}}", "cancel"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Merchants",
+      "item": [
+        {
+          "name": "Create Merchant",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"business_name\": \"Demo Merchant {{$randomCompanyName}}\",\n  \"country\": \"US\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/merchants",
+              "host": ["{{baseUrl}}"],
+              "path": ["merchants"]
+            }
+          }
+        },
+        {
+          "name": "Get Merchant",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/merchants/{{merchantId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["merchants", "{{merchantId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get All Merchants",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/merchants",
+              "host": ["{{baseUrl}}"],
+              "path": ["merchants"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customers",
+      "item": [
+        {
+          "name": "Create Customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"request_id\": \"{{$randomUUID}}\",\n  \"email\": \"{{$randomEmail}}\",\n  \"name\": \"{{$randomFullName}}\",\n  \"country\": \"US\",\n  \"address\": {\n    \"line1\": \"{{$randomStreetAddress}}\",\n    \"city\": \"{{$randomCity}}\",\n    \"state\": \"{{$randomStateAbbr}}\",\n    \"country\": \"US\",\n    \"postal_code\": \"{{$randomZipCode}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/customers",
+              "host": ["{{baseUrl}}"],
+              "path": ["customers"]
+            }
+          }
+        },
+        {
+          "name": "Get Customer",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/customers/{{customerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["customers", "{{customerId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin & Configuration",
+      "item": [
+        {
+          "name": "Get All Configuration",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/config",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "config"]
+            }
+          }
+        },
+        {
+          "name": "Update Routing Weights",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"StripeMock\": 70,\n  \"AdyenMock\": 20,\n  \"LocalBankMock\": 10\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/config/routing_weights",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "config", "routing_weights"]
+            }
+          }
+        },
+        {
+          "name": "Refresh Configuration",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/config/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "config", "refresh"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Monitoring",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["actuator", "health"]
+            }
+          }
+        },
+        {
+          "name": "Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/metrics",
+              "host": ["{{baseUrl}}"],
+              "path": ["actuator", "metrics"]
+            }
+          }
+        },
+        {
+          "name": "Payment Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/metrics/payments.created",
+              "host": ["{{baseUrl}}"],
+              "path": ["actuator", "metrics", "payments.created"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
