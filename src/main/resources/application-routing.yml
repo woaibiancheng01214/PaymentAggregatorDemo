@@ -16,6 +16,9 @@ providers:
     baseFeeBps: 220
 
 routing:
+  # Active routing profile - can be changed at runtime
+  profile: "balanced"  # Options: cost_optimized, rules_only, reliability_focused, balanced, etc.
+
   rules:
     - if: { country: US, network: AMEX }
       action: { prefer: [AdyenMock], mode: PREFERRED }
@@ -23,6 +26,23 @@ routing:
       action: { prefer: [LocalBankMock], mode: STRICT }
   strategies: { cost: true, weight: true, health: true }
   weights: { StripeMock: 60, AdyenMock: 30, LocalBankMock: 10 }
+
+  # Custom routing profiles (optional - built-in profiles are always available)
+  profiles:
+    # Example custom profile for merchant-specific optimization
+    merchant_optimized:
+      strategies: ["rules", "cost"]
+      weights:
+        rules: 0.7
+        cost: 0.3
+
+    # Example high-volume profile for load balancing
+    high_volume:
+      strategies: ["load_balancing", "success_rate", "cost"]
+      weights:
+        load_balancing: 0.5
+        success_rate: 0.3
+        cost: 0.2
 
 fx:
   rates:

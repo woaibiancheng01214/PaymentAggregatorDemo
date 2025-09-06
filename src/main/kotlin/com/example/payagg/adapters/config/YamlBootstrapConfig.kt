@@ -1,5 +1,6 @@
 package com.example.payagg.adapters.config
 
+import com.example.payagg.config.ConfigKeys
 import com.example.payagg.ports.ConfigPort
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
@@ -37,7 +38,17 @@ class YamlBootstrapConfig(
             // Bootstrap routing configuration
             yamlContent["routing"]?.let { routing ->
                 val routingMap = routing as Map<String, Any>
-                
+
+                // Bootstrap routing profile (wrap in JSON structure for database storage)
+                routingMap["profile"]?.let { profile ->
+                    configPort.setConfig(ConfigKeys.ROUTING_PROFILE, mapOf("profile" to profile.toString()))
+                }
+
+                // Bootstrap custom profiles
+                routingMap["profiles"]?.let { profiles ->
+                    configPort.setConfig(ConfigKeys.ROUTING_PROFILES, profiles)
+                }
+
                 routingMap["rules"]?.let { rules ->
                     configPort.setConfig("routing_rules", rules)
                 }
@@ -49,7 +60,7 @@ class YamlBootstrapConfig(
                 routingMap["weights"]?.let { weights ->
                     configPort.setConfig("routing_weights", weights)
                 }
-                
+
                 logger.info("Bootstrapped routing configuration")
             }
             
