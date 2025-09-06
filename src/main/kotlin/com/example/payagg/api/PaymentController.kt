@@ -5,6 +5,7 @@ import com.example.payagg.domain.payments.Payment
 import com.example.payagg.domain.payments.PaymentAttempt
 import com.example.payagg.domain.payments.PaymentService
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
@@ -20,16 +21,23 @@ class PaymentController(
 ) {
     
     @PostMapping
-    @Operation(summary = "Create a new payment")
-    fun createPayment(@Valid @RequestBody request: CreatePaymentRequest): ResponseEntity<PaymentResponse> {
+    @Operation(
+        summary = "Create a new payment",
+        description = "Creates a new payment in INIT status. Requires X-Request-Id header for tracking and idempotency."
+    )
+    fun createPayment(
+        @Valid @RequestBody request: CreatePaymentRequest,
+        @Parameter(description = "Unique request identifier for tracking and idempotency", required = true)
+        @RequestHeader("X-Request-Id") requestId: String?
+    ): ResponseEntity<PaymentResponse> {
         val payment = paymentService.createPayment(
-            requestId = request.requestId,
+            requestId = requestId?.let { UUID.fromString(it) },
             amount = request.amount,
             currency = request.currency,
             merchantId = request.merchantId,
             customerId = request.customerId
         )
-        
+
         return ResponseEntity.status(HttpStatus.CREATED).body(payment.toResponse())
     }
     
@@ -59,10 +67,15 @@ class PaymentController(
     }
     
     @PostMapping("/{id}/confirm")
-    @Operation(summary = "Confirm payment with payment method")
+    @Operation(
+        summary = "Confirm payment with payment method",
+        description = "Confirms a payment with payment method details and triggers smart routing. Requires X-Request-Id header."
+    )
     fun confirmPayment(
         @PathVariable id: UUID,
-        @Valid @RequestBody request: ConfirmPaymentRequest
+        @Valid @RequestBody request: ConfirmPaymentRequest,
+        @Parameter(description = "Unique request identifier for tracking and idempotency", required = true)
+        @RequestHeader("X-Request-Id") requestId: String?
     ): ResponseEntity<PaymentAttemptResponse> {
         val paymentMethod = mapOf(
             "type" to request.paymentMethod.type,

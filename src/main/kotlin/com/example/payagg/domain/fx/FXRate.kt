@@ -1,6 +1,7 @@
 package com.example.payagg.domain.fx
 
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.Instant
 import java.util.*
 
@@ -14,7 +15,7 @@ data class FXRate(
         return FXRate(
             fromCurrency = toCurrency,
             toCurrency = fromCurrency,
-            rate = BigDecimal.ONE.divide(rate, 6, BigDecimal.ROUND_HALF_UP),
+            rate = BigDecimal.ONE.divide(rate, 6, RoundingMode.HALF_UP),
             timestamp = timestamp
         )
     }

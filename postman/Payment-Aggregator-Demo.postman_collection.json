@@ -67,11 +67,19 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-Request-Id",
+                "value": "{{$randomUUID}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "payment-create-{{$timestamp}}"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"request_id\": \"{{$randomUUID}}\",\n  \"amount\": 100.00,\n  \"currency\": \"USD\",\n  \"merchant_id\": \"{{merchantId}}\",\n  \"customer_id\": \"{{customerId}}\"\n}"
+              "raw": "{\n  \"amount\": 100.00,\n  \"currency\": \"USD\",\n  \"merchant_id\": \"{{merchantId}}\",\n  \"customer_id\": \"{{customerId}}\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/payments",
@@ -100,6 +108,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-Request-Id",
+                "value": "{{$randomUUID}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "payment-confirm-visa-{{$timestamp}}"
               }
             ],
             "body": {
@@ -121,6 +137,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-Request-Id",
+                "value": "{{$randomUUID}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "payment-confirm-amex-{{$timestamp}}"
               }
             ],
             "body": {
@@ -159,6 +183,14 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-Request-Id",
+                "value": "{{$randomUUID}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "merchant-create-{{$timestamp}}"
               }
             ],
             "body": {
@@ -209,11 +241,19 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "X-Request-Id",
+                "value": "{{$randomUUID}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "customer-create-{{$timestamp}}"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"request_id\": \"{{$randomUUID}}\",\n  \"email\": \"{{$randomEmail}}\",\n  \"name\": \"{{$randomFullName}}\",\n  \"country\": \"US\",\n  \"address\": {\n    \"line1\": \"{{$randomStreetAddress}}\",\n    \"city\": \"{{$randomCity}}\",\n    \"state\": \"{{$randomStateAbbr}}\",\n    \"country\": \"US\",\n    \"postal_code\": \"{{$randomZipCode}}\"\n  }\n}"
+              "raw": "{\n  \"email\": \"{{$randomEmail}}\",\n  \"name\": \"{{$randomFullName}}\",\n  \"country\": \"US\",\n  \"address\": {\n    \"line1\": \"{{$randomStreetAddress}}\",\n    \"city\": \"{{$randomCity}}\",\n    \"state\": \"{{$randomStateAbbr}}\",\n    \"country\": \"US\",\n    \"postal_code\": \"{{$randomZipCode}}\"\n  }\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/customers",

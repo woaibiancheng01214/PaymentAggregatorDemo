@@ -106,13 +106,21 @@ The application follows **Clean Architecture** and **Domain-Driven Design** prin
 
 ## 🧪 Testing the Application
 
+### Required Headers
+
+All POST requests require the following headers:
+- `Content-Type: application/json`
+- `X-Request-Id: <unique-request-id>` - For idempotency and request tracking
+- `Idempotency-Key: <unique-key>` - Optional, for duplicate request prevention
+
 ### 1. Create a Payment
 
 ```bash
 curl -X POST http://localhost:8080/payments \
   -H "Content-Type: application/json" \
+  -H "X-Request-Id: 550e8400-e29b-41d4-a716-446655440999" \
+  -H "Idempotency-Key: payment-create-001" \
   -d '{
-    "request_id": "550e8400-e29b-41d4-a716-446655440999",
     "amount": 100.00,
     "currency": "USD",
     "merchant_id": "550e8400-e29b-41d4-a716-446655440001"
@@ -124,6 +132,8 @@ curl -X POST http://localhost:8080/payments \
 ```bash
 curl -X POST http://localhost:8080/payments/{payment_id}/confirm \
   -H "Content-Type: application/json" \
+  -H "X-Request-Id: 550e8400-e29b-41d4-a716-446655441000" \
+  -H "Idempotency-Key: payment-confirm-001" \
   -d '{
     "payment_method": {
       "type": "card",

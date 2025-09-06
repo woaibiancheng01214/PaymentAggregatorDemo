@@ -5,6 +5,7 @@ import com.example.payagg.domain.Address
 import com.example.payagg.domain.Customer
 import com.example.payagg.domain.CustomerService
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
@@ -20,16 +21,23 @@ class CustomerController(
 ) {
     
     @PostMapping
-    @Operation(summary = "Create a new customer")
-    fun createCustomer(@Valid @RequestBody request: CreateCustomerRequest): ResponseEntity<CustomerResponse> {
+    @Operation(
+        summary = "Create a new customer",
+        description = "Creates a new customer. Requires X-Request-Id header for tracking and idempotency."
+    )
+    fun createCustomer(
+        @Valid @RequestBody request: CreateCustomerRequest,
+        @Parameter(description = "Unique request identifier for tracking and idempotency", required = true)
+        @RequestHeader("X-Request-Id") requestId: String?
+    ): ResponseEntity<CustomerResponse> {
         val customer = customerService.createCustomer(
-            requestId = request.requestId,
+            requestId = requestId?.let { UUID.fromString(it) },
             email = request.email,
             name = request.name,
             country = request.country,
             address = request.address?.toDomain()
         )
-        
+
         return ResponseEntity.status(HttpStatus.CREATED).body(customer.toResponse())
     }
     

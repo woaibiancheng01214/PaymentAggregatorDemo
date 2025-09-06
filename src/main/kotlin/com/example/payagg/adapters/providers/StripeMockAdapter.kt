@@ -4,6 +4,8 @@ import com.example.payagg.domain.CardNetwork
 import com.example.payagg.ports.*
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.Instant
 import java.util.*
 
@@ -12,7 +14,6 @@ class StripeMockAdapter : PaymentProvider {
     
     private val logger = LoggerFactory.getLogger(StripeMockAdapter::class.java)
     override val name = "StripeMock"
-    
     private val supportedCurrencies = setOf(
         Currency.getInstance("USD"),
         Currency.getInstance("EUR")
@@ -24,8 +25,9 @@ class StripeMockAdapter : PaymentProvider {
     override fun authorize(request: ProviderPaymentRequest): ProviderPaymentResponse {
         logger.info("StripeMock: Processing authorization for amount ${request.amount} ${request.currency}")
         
-        // Simulate soft decline for amounts ending with 37
-        if (request.amount % 100 == 37L) {
+        // Simulate soft decline for amounts ending with .37
+        val amountCents = request.amount.multiply(BigDecimal("100")).toLong()
+        if (amountCents % 100 == 37L) {
             return ProviderPaymentResponse(
                 success = false,
                 transactionId = null,
@@ -34,9 +36,9 @@ class StripeMockAdapter : PaymentProvider {
                 errorMessage = "Insufficient funds - please try again"
             )
         }
-        
-        // Simulate timeout for amounts ending with 99
-        if (request.amount % 100 == 99L) {
+
+        // Simulate timeout for amounts ending with .99
+        if (amountCents % 100 == 99L) {
             Thread.sleep(5000) // Simulate timeout
             return ProviderPaymentResponse(
                 success = false,
@@ -74,13 +76,14 @@ class StripeMockAdapter : PaymentProvider {
                country in supportedCountries
     }
     
-    override fun feeFor(currency: Currency, amount: Long): Fee {
-        // 3.0% + 30 cents
-        val percentageFee = (amount * 300) / 10000 // 3.0% in basis points
-        val fixedFee = if (currency.currencyCode == "USD") 30 else 25 // cents
-        
+    override fun feeFor(currency: Currency, amount: BigDecimal): Fee {
+        // 3.0% + 30 cents (or 25 cents for non-USD)
+        val percentageRate = BigDecimal("0.03") // 3.0%
+        val percentageFee = amount.multiply(percentageRate).setScale(2, RoundingMode.HALF_UP)
+        val fixedFee = if (currency == Currency.getInstance("USD")) BigDecimal("0.30") else BigDecimal("0.25")
+
         return Fee(
-            amount = percentageFee + fixedFee,
+            amount = percentageFee.add(fixedFee),
             currency = currency,
             type = FeeType.COMBINED
         )

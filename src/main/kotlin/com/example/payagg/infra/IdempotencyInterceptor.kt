@@ -18,7 +18,7 @@ class IdempotencyInterceptor(
     
     companion object {
         const val IDEMPOTENCY_KEY_HEADER = "Idempotency-Key"
-        const val MERCHANT_ID_HEADER = "X-Merchant-Id"
+        const val REQUEST_ID_HEADER = "X-Request-Id"
     }
     
     override fun preHandle(
@@ -27,22 +27,22 @@ class IdempotencyInterceptor(
         handler: Any
     ): Boolean {
         val idempotencyKey = request.getHeader(IDEMPOTENCY_KEY_HEADER)
-        val merchantId = request.getHeader(MERCHANT_ID_HEADER)
-        
-        // Only apply idempotency to POST requests with idempotency key
-        if (request.method != "POST" || idempotencyKey.isNullOrBlank() || merchantId.isNullOrBlank()) {
+        val requestId = request.getHeader(REQUEST_ID_HEADER)
+
+        // Only apply idempotency to POST requests with idempotency key and request ID
+        if (request.method != "POST" || idempotencyKey.isNullOrBlank() || requestId.isNullOrBlank()) {
             return true
         }
         
         val endpoint = request.requestURI
         
         // Check if operation was already executed
-        if (idempotencyService.isOperationExecuted(merchantId, idempotencyKey, endpoint)) {
-            logger.info("Idempotent operation detected for key: $idempotencyKey, endpoint: $endpoint")
-            
+        if (idempotencyService.isOperationExecuted(requestId, idempotencyKey, endpoint)) {
+            logger.info("Idempotent operation detected for requestId: $requestId, key: $idempotencyKey, endpoint: $endpoint")
+
             // Try to retrieve cached response
             val cachedResult = idempotencyService.idempotencyPort.retrieve(
-                com.example.payagg.ports.IdempotencyKey(merchantId, idempotencyKey, endpoint).toRedisKey()
+                com.example.payagg.ports.IdempotencyKey(requestId, idempotencyKey, endpoint).toRedisKey()
             )
             
             if (cachedResult != null) {

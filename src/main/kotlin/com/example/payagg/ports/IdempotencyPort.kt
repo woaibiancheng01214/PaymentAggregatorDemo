@@ -10,9 +10,9 @@ interface IdempotencyPort {
 }
 
 data class IdempotencyKey(
-    val merchantId: String,
+    val requestId: String,
     val idempotencyKey: String,
     val endpoint: String
 ) {
-    fun toRedisKey(): String = "idempotency:$merchantId:$endpoint:$idempotencyKey"
+    fun toRedisKey(): String = "idempotency:$requestId:$endpoint:$idempotencyKey"
 }

@@ -19,7 +19,6 @@ class PaymentService(
     private val merchantRepository: MerchantRepository,
     private val customerRepository: CustomerRepository,
     private val routingEngine: RoutingEngine,
-    private val providerRegistry: com.example.payagg.adapters.providers.PaymentProviderRegistry
 ) {
     
     private val logger = LoggerFactory.getLogger(PaymentService::class.java)
@@ -105,7 +104,7 @@ class PaymentService(
         
         // Create routing context
         val routingContext = RoutingContext(
-            amount = payment.amount.multiply(BigDecimal(100)).toLong(), // Convert to minor units
+            amount = payment.amount, // Use BigDecimal directly for precision
             currency = currency,
             country = merchant.country,
             cardNetwork = cardNetwork,

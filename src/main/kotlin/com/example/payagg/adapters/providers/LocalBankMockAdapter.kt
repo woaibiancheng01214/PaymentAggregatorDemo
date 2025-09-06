@@ -5,6 +5,8 @@ import com.example.payagg.ports.*
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.Instant
 import java.util.*
 
@@ -54,8 +56,9 @@ class LocalBankMockAdapter : PaymentProvider {
             )
         }
         
-        // Simulate occasional network issues
-        if (request.amount % 17 == 0L) {
+        // Simulate occasional network issues (for amounts divisible by 17)
+        val amountCents = request.amount.multiply(BigDecimal("100")).toLong()
+        if (amountCents % 17 == 0L) {
             return ProviderPaymentResponse(
                 success = false,
                 transactionId = null,
@@ -105,13 +108,14 @@ class LocalBankMockAdapter : PaymentProvider {
                country in supportedCountries
     }
     
-    override fun feeFor(currency: Currency, amount: Long): Fee {
+    override fun feeFor(currency: Currency, amount: BigDecimal): Fee {
         // Great fees for domestic cards: 2.2% + 20 cents
-        val percentageFee = (amount * 220) / 10000 // 2.2% in basis points
-        val fixedFee = 20 // cents
-        
+        val percentageRate = BigDecimal("0.022") // 2.2%
+        val percentageFee = amount.multiply(percentageRate).setScale(2, RoundingMode.HALF_UP)
+        val fixedFee = BigDecimal("0.20") // 20 cents
+
         return Fee(
-            amount = percentageFee + fixedFee,
+            amount = percentageFee.add(fixedFee),
             currency = currency,
             type = FeeType.COMBINED
         )

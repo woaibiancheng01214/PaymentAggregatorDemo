@@ -4,6 +4,8 @@ import com.example.payagg.domain.CardNetwork
 import com.example.payagg.ports.*
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.Instant
 import java.util.*
 
@@ -26,7 +28,7 @@ class AdyenMockAdapter : PaymentProvider {
         logger.info("AdyenMock: Processing authorization for amount ${request.amount} ${request.currency}")
         
         // Reject AMEX for amounts over $1000
-        if (request.paymentMethod.card?.network == CardNetwork.AMEX && request.amount > 100000) {
+        if (request.paymentMethod.card?.network == CardNetwork.AMEX && request.amount > BigDecimal("1000.00")) {
             return ProviderPaymentResponse(
                 success = false,
                 transactionId = null,
@@ -36,8 +38,9 @@ class AdyenMockAdapter : PaymentProvider {
             )
         }
         
-        // Simulate random failures for testing
-        if (request.amount % 13 == 0L) {
+        // Simulate random failures for testing (for amounts divisible by 13)
+        val amountCents = request.amount.multiply(BigDecimal("100")).toLong()
+        if (amountCents % 13 == 0L) {
             return ProviderPaymentResponse(
                 success = false,
                 transactionId = null,
@@ -74,15 +77,16 @@ class AdyenMockAdapter : PaymentProvider {
                country in supportedCountries
     }
     
-    override fun feeFor(currency: Currency, amount: Long): Fee {
+    override fun feeFor(currency: Currency, amount: BigDecimal): Fee {
         // 2.9% base fee
-        val percentageFee = (amount * 290) / 10000 // 2.9% in basis points
-        
-        // Add surcharge for AMEX
-        val surcharge = if (currency.currencyCode == "USD") 50 else 40 // Additional fee for AMEX
-        
+        val percentageRate = BigDecimal("0.029") // 2.9%
+        val percentageFee = amount.multiply(percentageRate).setScale(2, RoundingMode.HALF_UP)
+
+        // Add surcharge for AMEX (higher fees for premium cards)
+        val surcharge = if (currency.currencyCode == "USD") BigDecimal("0.50") else BigDecimal("0.40")
+
         return Fee(
-            amount = percentageFee + surcharge,
+            amount = percentageFee.add(surcharge),
             currency = currency,
             type = FeeType.COMBINED
         )

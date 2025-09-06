@@ -41,17 +41,27 @@ Error responses follow this format:
 }
 ```
 
+## Required Headers
+
+All POST requests require the following headers:
+
+- `Content-Type: application/json` - Request content type
+- `X-Request-Id: <unique-uuid>` - Unique request identifier for tracking and idempotency
+- `Idempotency-Key: <unique-key>` - Optional, for duplicate request prevention
+
 ## Idempotency
 
-POST requests support idempotency using the `Idempotency-Key` header:
+POST requests support idempotency using both `X-Request-Id` and `Idempotency-Key` headers:
 
 ```bash
 curl -X POST http://localhost:8080/payments \
-  -H "Idempotency-Key: unique-key-123" \
-  -H "X-Merchant-Id: merchant-uuid" \
   -H "Content-Type: application/json" \
-  -d '{"amount": 100.00, ...}'
+  -H "X-Request-Id: 550e8400-e29b-41d4-a716-446655440999" \
+  -H "Idempotency-Key: unique-key-123" \
+  -d '{"amount": 100.00, "currency": "USD", "merchant_id": "..."}'
 ```
+
+The combination of `X-Request-Id`, `Idempotency-Key`, and endpoint creates a unique idempotency key. If the same combination is used within the TTL period, the cached response will be returned.
 
 ## API Endpoints
 
@@ -65,9 +75,10 @@ Creates a new payment in `INIT` status.
 ```http
 POST /payments
 Content-Type: application/json
+X-Request-Id: 550e8400-e29b-41d4-a716-446655440999
+Idempotency-Key: payment-create-001
 
 {
-  "request_id": "uuid",           // Optional, for idempotency
   "amount": 100.00,               // Required, payment amount
   "currency": "USD",              // Required, 3-letter currency code
   "merchant_id": "uuid",          // Required, merchant identifier
@@ -98,6 +109,8 @@ Confirms a payment with payment method details and triggers smart routing.
 ```http
 POST /payments/{id}/confirm
 Content-Type: application/json
+X-Request-Id: 550e8400-e29b-41d4-a716-446655441000
+Idempotency-Key: payment-confirm-001
 
 {
   "payment_method": {
