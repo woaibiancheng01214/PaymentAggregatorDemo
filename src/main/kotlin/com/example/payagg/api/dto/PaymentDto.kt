@@ -11,20 +11,16 @@ import java.util.*
 
 data class CreatePaymentRequest(
     @field:NotNull
-    @JsonProperty("request_id")
-    val requestId: UUID?,
-    
-    @field:NotNull
     @field:Positive
     val amount: BigDecimal,
-    
+
     @field:NotBlank
     val currency: String,
-    
+
     @field:NotNull
     @JsonProperty("merchant_id")
     val merchantId: UUID,
-    
+
     @JsonProperty("customer_id")
     val customerId: UUID?
 )

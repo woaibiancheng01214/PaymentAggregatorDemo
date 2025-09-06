@@ -30,8 +30,7 @@ class PaymentServiceTest {
             paymentAttemptRepository,
             merchantRepository,
             customerRepository,
-            routingEngine,
-            providerRegistry
+            routingEngine
         )
     }
     

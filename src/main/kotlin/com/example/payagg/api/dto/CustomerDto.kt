@@ -8,20 +8,17 @@ import java.time.Instant
 import java.util.*
 
 data class CreateCustomerRequest(
-    @JsonProperty("request_id")
-    val requestId: UUID?,
-    
     @field:NotBlank
     @field:Email
     val email: String,
-    
+
     @field:NotBlank
     val name: String,
-    
+
     @field:NotBlank
     @field:Size(min = 2, max = 2)
     val country: String,
-    
+
     val address: AddressDto?
 )
 

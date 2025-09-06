@@ -3,6 +3,7 @@ package com.example.payagg.domain.routing
 import com.example.payagg.ports.PaymentProvider
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
+import java.math.BigDecimal
 
 @Component
 class CostStrategy : RoutingStrategy {
@@ -26,7 +27,7 @@ class CostStrategy : RoutingStrategy {
                 provider to fee.amount
             } catch (e: Exception) {
                 logger.warn("Failed to calculate fee for provider ${provider.name}", e)
-                provider to Long.MAX_VALUE // Treat as most expensive if calculation fails
+                provider to BigDecimal("999999.99") // Treat as most expensive if calculation fails
             }
         }
         
@@ -43,7 +44,7 @@ class CostStrategy : RoutingStrategy {
             metadata = mapOf<String, Any>(
                 "provider_fees" to sortedByFee.associate { it.first.name to it.second },
                 "lowest_fee_provider" to (sortedProviders.firstOrNull()?.name ?: ""),
-                "lowest_fee_amount" to (sortedByFee.firstOrNull()?.second ?: 0L)
+                "lowest_fee_amount" to (sortedByFee.firstOrNull()?.second ?: BigDecimal.ZERO)
             )
         )
     }

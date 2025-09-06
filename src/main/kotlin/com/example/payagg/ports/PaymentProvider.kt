@@ -1,6 +1,7 @@
 package com.example.payagg.ports
 
 import com.example.payagg.domain.CardNetwork
+import java.math.BigDecimal
 import java.util.*
 
 interface PaymentProvider {
@@ -9,12 +10,12 @@ interface PaymentProvider {
     fun authorize(request: ProviderPaymentRequest): ProviderPaymentResponse
     fun capture(request: ProviderPaymentRequest): ProviderPaymentResponse
     fun supports(network: CardNetwork, currency: Currency, country: String): Boolean
-    fun feeFor(currency: Currency, amount: Long): Fee
+    fun feeFor(currency: Currency, amount: BigDecimal): Fee
     fun health(): ProviderHealth
 }
 
 data class ProviderPaymentRequest(
-    val amount: Long, // in minor units (cents)
+    val amount: BigDecimal, // monetary amount with proper precision
     val currency: Currency,
     val paymentMethod: PaymentMethod,
     val merchantId: String,
@@ -60,7 +61,7 @@ enum class ProviderTransactionStatus {
 }
 
 data class Fee(
-    val amount: Long, // in minor units
+    val amount: BigDecimal, // monetary amount with proper precision
     val currency: Currency,
     val type: FeeType
 )

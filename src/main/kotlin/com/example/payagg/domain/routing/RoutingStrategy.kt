@@ -1,6 +1,7 @@
 package com.example.payagg.domain.routing
 
 import com.example.payagg.ports.PaymentProvider
+import java.math.BigDecimal
 
 interface RoutingStrategy {
     val name: String
@@ -8,7 +9,7 @@ interface RoutingStrategy {
 }
 
 data class RoutingContext(
-    val amount: Long,
+    val amount: BigDecimal,
     val currency: java.util.Currency,
     val country: String,
     val cardNetwork: com.example.payagg.domain.CardNetwork,

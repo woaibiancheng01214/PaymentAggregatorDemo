@@ -17,12 +17,12 @@ class IdempotencyService(
     private val logger = LoggerFactory.getLogger(IdempotencyService::class.java)
     
     fun <T> executeIdempotent(
-        merchantId: String,
+        requestId: String,
         idempotencyKey: String,
         endpoint: String,
         operation: () -> T
     ): T {
-        val key = IdempotencyKey(merchantId, idempotencyKey, endpoint)
+        val key = IdempotencyKey(requestId, idempotencyKey, endpoint)
         val redisKey = key.toRedisKey()
         
         // Check if operation was already executed
@@ -45,13 +45,13 @@ class IdempotencyService(
         return result
     }
     
-    fun isOperationExecuted(merchantId: String, idempotencyKey: String, endpoint: String): Boolean {
-        val key = IdempotencyKey(merchantId, idempotencyKey, endpoint)
+    fun isOperationExecuted(requestId: String, idempotencyKey: String, endpoint: String): Boolean {
+        val key = IdempotencyKey(requestId, idempotencyKey, endpoint)
         return idempotencyPort.exists(key.toRedisKey())
     }
-    
-    fun invalidateIdempotencyKey(merchantId: String, idempotencyKey: String, endpoint: String): Boolean {
-        val key = IdempotencyKey(merchantId, idempotencyKey, endpoint)
+
+    fun invalidateIdempotencyKey(requestId: String, idempotencyKey: String, endpoint: String): Boolean {
+        val key = IdempotencyKey(requestId, idempotencyKey, endpoint)
         return idempotencyPort.delete(key.toRedisKey())
     }
 }

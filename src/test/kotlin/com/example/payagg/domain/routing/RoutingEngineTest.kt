@@ -7,6 +7,7 @@ import io.mockk.*
 import org.assertj.core.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.math.BigDecimal
 import java.util.*
 
 class RoutingEngineTest {
@@ -46,7 +47,7 @@ class RoutingEngineTest {
     fun `should route successfully through all strategies`() {
         // Given
         val context = RoutingContext(
-            amount = 10000L, // $100.00
+            amount = BigDecimal("100.00"), // $100.00
             currency = Currency.getInstance("USD"),
             country = "US",
             cardNetwork = CardNetwork.VISA,
@@ -117,7 +118,7 @@ class RoutingEngineTest {
     fun `should return empty result when no eligible providers`() {
         // Given
         val context = RoutingContext(
-            amount = 10000L,
+            amount = BigDecimal("100.00"),
             currency = Currency.getInstance("USD"),
             country = "US",
             cardNetwork = CardNetwork.VISA,
@@ -151,7 +152,7 @@ class RoutingEngineTest {
     fun `should return empty result when no healthy providers`() {
         // Given
         val context = RoutingContext(
-            amount = 10000L,
+            amount = BigDecimal("100.00"),
             currency = Currency.getInstance("USD"),
             country = "US",
             cardNetwork = CardNetwork.VISA,
